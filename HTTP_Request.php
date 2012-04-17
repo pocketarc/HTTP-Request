@@ -50,9 +50,14 @@ class HTTP_Request {
 	if (!isset($url['query'])) {
 	    $url['query'] = '';
 	}
+	
+	if (!isset($url['port'])) {
+		$url['port'] = ($url['scheme'] == 'https') ? 443 : 80;
+	}
+	
 	$errno = 0;
 	$errstr = '';
-	$port = $url['scheme'] == 'https' ? 443 : 80;
+	$port = $url['port'];
 	$sslhost = (($url['scheme'] == 'https') ? 'ssl://' : '').$url['host'];
 	$fp = @fsockopen($sslhost, $port, $errno, $errstr, 30);
 	if (!$fp) {
