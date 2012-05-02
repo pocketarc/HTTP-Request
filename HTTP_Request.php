@@ -63,7 +63,8 @@ class HTTP_Request {
 	if (!$fp) {
 	    throw new Exception("Failed to connect to {$url['host']}.");
 	} else {
-	    $out = "$mode {$url['path']}?{$url['query']} HTTP/1.0\r\n";
+	    $url['query'] = empty($url['query']) ? '': '?'.$url['query'];
+	    $out = "$mode {$url['path']}{$url['query']} HTTP/1.0\r\n";
 	    $out .= "Host: {$url['host']}\r\n";
 	    $out .= "User-Agent: {$this->user_agent}\r\n";
 	    if (count($this->cookies) > 0) {
