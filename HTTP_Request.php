@@ -25,7 +25,7 @@
 class HTTP_Request {
 
     public $cookies = array();
-    public $user_agent = 'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.8) Gecko/20100722 Firefox/3.6.8';
+    public $user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/536.26.17 (KHTML, like Gecko) Version/6.0.2 Safari/536.26.17';
     public $last_url = '';
     public $multipart = false;
     public $redirections = 0;
@@ -147,7 +147,7 @@ class HTTP_Request {
 				$header['Location'] = 'http://' . $url['host'] . implode('/', $path) . '/' . $header['Location'];
 			    }
 			    $this->redirections++;
-			    $content = $this->request($header['Location'], $mode, $data, $save_to_file);
+			    $content = $this->request($header['Location'], 'GET', $mode == 'POST' ? array() : $mode, $save_to_file);
 			    break;
 			}
 		    }
