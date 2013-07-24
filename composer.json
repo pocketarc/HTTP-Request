@@ -1,0 +1,22 @@
+{
+    "name": "brunodebarros/http-request",
+    "type": "library",
+    "description": "A web crawler, built to be easily dropped into PHP applications, which behaves just like a regular web browser, interpreting location redirects and storing cookies automatically.",
+    "keywords": ["http","crawler"],
+    "homepage": "https://github.com/BrunoDeBarros/HTTP-Request",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Bruno De Barros",
+            "email": "bruno@terraduo.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.2.4"
+    },
+    "autoload": {
+        "psr-0": {
+        	"HTTP": "src/"
+        }
+    }
+}

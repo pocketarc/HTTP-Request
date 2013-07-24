@@ -29,6 +29,8 @@ class HTTP_Request {
     public $last_url = '';
     public $multipart = false;
     public $redirections = 0;
+    public $max_redirections = 10;
+    public $header = array();
 
     function __construct() {
 	
@@ -136,8 +138,10 @@ class HTTP_Request {
 				$this->cookies[$header['Set-Cookie'][0]] = $header['Set-Cookie'][1];
 			    }
 			}
+			
+			$this->header = $header;
 
-			if (isset($header['Location']) and $this->redirections < 10) {
+			if (isset($header['Location']) and $this->redirections < $this->max_redirections) {
 
 			    $location = parse_url($header['Location']);
 			    if (!isset($location['host'])) {
