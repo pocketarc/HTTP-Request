@@ -13,6 +13,20 @@ Features
 How to use it
 -------------
 
+#### Install with Composer
+
+Add `brunodebarros/http-request` to the contents of your composer.json:
+
+```
+{
+    "require": {
+        "brunodebarros/http-request": "dev-master"
+    }
+}
+```
+
+#### Then use it!
+
     $http = new HTTP_Request();
     $content = $http->request($url, $mode, $data, $save_to_file);
 
