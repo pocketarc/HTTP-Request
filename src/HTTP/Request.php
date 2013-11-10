@@ -108,10 +108,10 @@ class HTTP_Request {
 
 	    if (fwrite($fp, $out)) {
 
-		if (stristr($original, 'http://')) {
+                if (stristr($original, '://')) {
 		    $this->last_url = $original;
 		} else {
-		    $this->last_url = "http://" . $original;
+                    $this->last_url = "://" . $original;
 		}
 
 		if ($save_to_file) {
@@ -145,10 +145,16 @@ class HTTP_Request {
 
 			    $location = parse_url($header['Location']);
 			    if (!isset($location['host'])) {
+                                
+                                if (substr($header['Location'], 0, 1) == '/') {
+                                    # It's an absolute URL.
+                                    $header['Location'] = $url['scheme'].'://' . $url['host'] . $header['Location'];
+                                } else {
 				# It's a relative URL, let's take care of it.
 				$path = explode('/', $url['path']);
 				array_pop($path);
-				$header['Location'] = 'http://' . $url['host'] . implode('/', $path) . '/' . $header['Location'];
+                                    $header['Location'] = $url['scheme'].'://' . $url['host'] . implode('/', $path) . '/' . $header['Location'];
+                                }
 			    }
 			    $this->redirections++;
 			    $content = $this->request($header['Location'], 'GET', $mode == 'POST' ? array() : $mode, $save_to_file);
