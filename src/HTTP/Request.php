@@ -33,213 +33,213 @@ class HTTP_Request {
     public $header = array();
 
     function __construct() {
-	
+        
     }
 
     function request($url, $mode = 'GET', $data = array(), $save_to_file = false) {
-	if (!stristr($url, 'http://') and !stristr($url, 'https://')) {
-	    $url = 'http://' . $url;
-	}
-	$original = $url;
-	$url = parse_url($url);
-	if (!isset($url['host'])) {
-	    print_r($url);
-	    throw new Exception("Failed to parse the given URL correctly.");
-	}
-	if (!isset($url['path'])) {
-	    $url['path'] = '/';
-	}
-	if (!isset($url['query'])) {
-	    $url['query'] = '';
-	}
-	
-	if (!isset($url['port'])) {
-		$url['port'] = ($url['scheme'] == 'https') ? 443 : 80;
-	}
-	
-	$errno = 0;
-	$errstr = '';
-	$port = $url['port'];
-	$sslhost = (($url['scheme'] == 'https') ? 'ssl://' : '').$url['host'];
-	$fp = @fsockopen($sslhost, $port, $errno, $errstr, 30);
-	if (!$fp) {
-	    throw new Exception("Failed to connect to {$url['host']}.");
-	} else {
-	    $url['query'] = empty($url['query']) ? '': '?'.$url['query'];
-	    $out = "$mode {$url['path']}{$url['query']} HTTP/1.0\r\n";
-	    $out .= "Host: {$url['host']}\r\n";
-	    $out .= "User-Agent: {$this->user_agent}\r\n";
-	    if (count($this->cookies) > 0) {
-		$out .= "Cookie: ";
-		$i = 0;
-		foreach ($this->cookies as $name => $cookie) {
-		    if ($i == 0) {
-			$out .= "$name=$cookie";
-			$i = 1;
-		    } else {
-			$out .= "; $name=$cookie";
-		    }
-		}
-		$out .= "\r\n";
-	    }
-	    if (!empty($this->last_url)) {
-		$out .= "Referer: " . $this->last_url . "\r\n";
-	    }
-	    $out .= "Connection: Close\r\n";
+        if (!stristr($url, 'http://') and !stristr($url, 'https://')) {
+            $url = 'http://' . $url;
+        }
+        $original = $url;
+        $url = parse_url($url);
+        if (!isset($url['host'])) {
+            print_r($url);
+            throw new Exception("Failed to parse the given URL correctly.");
+        }
+        if (!isset($url['path'])) {
+            $url['path'] = '/';
+        }
+        if (!isset($url['query'])) {
+            $url['query'] = '';
+        }
 
-	    if ($mode == "POST") {
-		if (!$this->multipart) {
-		    $out .= "Content-Type: application/x-www-form-urlencoded\r\n";
-		    $post = self::urlencodeArray($data, $this->multipart);
-		} else {
-		    $out .= "Content-Type: multipart/form-data; boundary=AaB03x\r\n";
-		    $post = self::urlencodeArray($data, $this->multipart, 'AaB03x');
-		}
-		$out .= "Content-Length: " . strlen($post) . "\r\n";
-		$out .= "\r\n";
-		$out .= $post;
-	    } else {
-		$out .= "\r\n";
-	    }
+        if (!isset($url['port'])) {
+            $url['port'] = ($url['scheme'] == 'https') ? 443 : 80;
+        }
 
-	    $content = '';
-	    $header = '';
-	    $header_passed = false;
+        $errno = 0;
+        $errstr = '';
+        $port = $url['port'];
+        $sslhost = (($url['scheme'] == 'https') ? 'ssl://' : '') . $url['host'];
+        $fp = @fsockopen($sslhost, $port, $errno, $errstr, 30);
+        if (!$fp) {
+            throw new Exception("Failed to connect to {$url['host']}.");
+        } else {
+            $url['query'] = empty($url['query']) ? '' : '?' . $url['query'];
+            $out = "$mode {$url['path']}{$url['query']} HTTP/1.0\r\n";
+            $out .= "Host: {$url['host']}\r\n";
+            $out .= "User-Agent: {$this->user_agent}\r\n";
+            if (count($this->cookies) > 0) {
+                $out .= "Cookie: ";
+                $i = 0;
+                foreach ($this->cookies as $name => $cookie) {
+                    if ($i == 0) {
+                        $out .= "$name=$cookie";
+                        $i = 1;
+                    } else {
+                        $out .= "; $name=$cookie";
+                    }
+                }
+                $out .= "\r\n";
+            }
+            if (!empty($this->last_url)) {
+                $out .= "Referer: " . $this->last_url . "\r\n";
+            }
+            $out .= "Connection: Close\r\n";
 
-	    if (fwrite($fp, $out)) {
+            if ($mode == "POST") {
+                if (!$this->multipart) {
+                    $out .= "Content-Type: application/x-www-form-urlencoded\r\n";
+                    $post = self::urlencodeArray($data, $this->multipart);
+                } else {
+                    $out .= "Content-Type: multipart/form-data; boundary=AaB03x\r\n";
+                    $post = self::urlencodeArray($data, $this->multipart, 'AaB03x');
+                }
+                $out .= "Content-Length: " . strlen($post) . "\r\n";
+                $out .= "\r\n";
+                $out .= $post;
+            } else {
+                $out .= "\r\n";
+            }
+
+            $content = '';
+            $header = '';
+            $header_passed = false;
+
+            if (fwrite($fp, $out)) {
 
                 if (stristr($original, '://')) {
-		    $this->last_url = $original;
-		} else {
+                    $this->last_url = $original;
+                } else {
                     $this->last_url = "://" . $original;
-		}
+                }
 
-		if ($save_to_file) {
-		    $fh = fopen($save_to_file, 'w+');
-		}
+                if ($save_to_file) {
+                    $fh = fopen($save_to_file, 'w+');
+                }
 
-		while (!feof($fp)) {
-		    $line = fgets($fp);
-		    if ($line == "\r\n" and !$header_passed) {
-			$header_passed = true;
+                while (!feof($fp)) {
+                    $line = fgets($fp);
+                    if ($line == "\r\n" and !$header_passed) {
+                        $header_passed = true;
 
-			$header = self::parseHeaders($header);
+                        $header = self::parseHeaders($header);
 
-			if (isset($header['Set-Cookie'])) {
-			    if (is_array($header['Set-Cookie'])) {
-				foreach ($header['Set-Cookie'] as $cookie) {
-				    $cookie = explode(';', $cookie);
-				    $cookie = explode('=', $cookie[0], 2);
-				    $this->cookies[$cookie[0]] = $cookie[1];
-				}
-			    } else {
-				$header['Set-Cookie'] = explode(';', $header['Set-Cookie']);
-				$header['Set-Cookie'] = explode('=', $header['Set-Cookie'][0], 2);
-				$this->cookies[$header['Set-Cookie'][0]] = $header['Set-Cookie'][1];
-			    }
-			}
-			
-			$this->header = $header;
+                        if (isset($header['Set-Cookie'])) {
+                            if (is_array($header['Set-Cookie'])) {
+                                foreach ($header['Set-Cookie'] as $cookie) {
+                                    $cookie = explode(';', $cookie);
+                                    $cookie = explode('=', $cookie[0], 2);
+                                    $this->cookies[$cookie[0]] = $cookie[1];
+                                }
+                            } else {
+                                $header['Set-Cookie'] = explode(';', $header['Set-Cookie']);
+                                $header['Set-Cookie'] = explode('=', $header['Set-Cookie'][0], 2);
+                                $this->cookies[$header['Set-Cookie'][0]] = $header['Set-Cookie'][1];
+                            }
+                        }
 
-			if (isset($header['Location']) and $this->redirections < $this->max_redirections) {
+                        $this->header = $header;
 
-			    $location = parse_url($header['Location']);
-			    if (!isset($location['host'])) {
-                                
+                        if (isset($header['Location']) and $this->redirections < $this->max_redirections) {
+
+                            $location = parse_url($header['Location']);
+                            if (!isset($location['host'])) {
+
                                 if (substr($header['Location'], 0, 1) == '/') {
                                     # It's an absolute URL.
-                                    $header['Location'] = $url['scheme'].'://' . $url['host'] . $header['Location'];
+                                    $header['Location'] = $url['scheme'] . '://' . $url['host'] . $header['Location'];
                                 } else {
-				# It's a relative URL, let's take care of it.
-				$path = explode('/', $url['path']);
-				array_pop($path);
-                                    $header['Location'] = $url['scheme'].'://' . $url['host'] . implode('/', $path) . '/' . $header['Location'];
+                                    # It's a relative URL, let's take care of it.
+                                    $path = explode('/', $url['path']);
+                                    array_pop($path);
+                                    $header['Location'] = $url['scheme'] . '://' . $url['host'] . implode('/', $path) . '/' . $header['Location'];
                                 }
-			    }
-			    $this->redirections++;
-			    $content = $this->request($header['Location'], 'GET', $mode == 'POST' ? array() : $mode, $save_to_file);
-			    break;
-			}
-		    }
-		    if ($header_passed) {
-			if (!$save_to_file) {
-			    $content .= $line;
-			} else {
-			    fwrite($fh, $line);
-			}
-		    } else {
-			$header .= $line;
-		    }
-		}
-		fclose($fp);
-		if ($save_to_file) {
-		    fclose($fh);
-		}
-		return trim($content);
-	    } else {
-		throw new Exception("Failed to send request headers to $url.");
-	    }
-	}
+                            }
+                            $this->redirections++;
+                            $content = $this->request($header['Location'], 'GET', $mode == 'POST' ? array() : $mode, $save_to_file);
+                            break;
+                        }
+                    }
+                    if ($header_passed) {
+                        if (!$save_to_file) {
+                            $content .= $line;
+                        } else {
+                            fwrite($fh, $line);
+                        }
+                    } else {
+                        $header .= $line;
+                    }
+                }
+                fclose($fp);
+                if ($save_to_file) {
+                    fclose($fh);
+                }
+                return trim($content);
+            } else {
+                throw new Exception("Failed to send request headers to $url.");
+            }
+        }
     }
 
     public static function urlencodeArray($data, $multipart = false, $boundary = '') {
-	$return = "";
-	$i = 0;
+        $return = "";
+        $i = 0;
 
-	if ($multipart) {
-	    $return .= '--' . $boundary;
-	}
+        if ($multipart) {
+            $return .= '--' . $boundary;
+        }
 
-	foreach ($data as $key => $value) {
-	    if (!$multipart) {
-		if ($i == 0) {
-		    $return .= urlencode($key) . "=" . urlencode($value);
-		    $i = 1;
-		} else {
-		    $return .= "&" . urlencode($key) . "=" . urlencode($value);
-		}
-	    } else {
-		$return .= "\r\n" . 'Content-Disposition: form-data; name="' . $key . '"' . "\r\n" . "\r\n";
-		$return .= $value . "\r\n";
-		$return .= '--' . $boundary;
-	    }
-	}
+        foreach ($data as $key => $value) {
+            if (!$multipart) {
+                if ($i == 0) {
+                    $return .= urlencode($key) . "=" . urlencode($value);
+                    $i = 1;
+                } else {
+                    $return .= "&" . urlencode($key) . "=" . urlencode($value);
+                }
+            } else {
+                $return .= "\r\n" . 'Content-Disposition: form-data; name="' . $key . '"' . "\r\n" . "\r\n";
+                $return .= $value . "\r\n";
+                $return .= '--' . $boundary;
+            }
+        }
 
-	if ($multipart) {
-	    $return .= '--';
-	}
-	return $return;
+        if ($multipart) {
+            $return .= '--';
+        }
+        return $return;
     }
 
     public static function GetBetween($content, $start, $end) {
-	$r = explode($start, $content, 2);
-	if (isset($r[1])) {
-	    $r = explode($end, $r[1], 2);
-	    return $r[0];
-	}
-	return '';
+        $r = explode($start, $content, 2);
+        if (isset($r[1])) {
+            $r = explode($end, $r[1], 2);
+            return $r[0];
+        }
+        return '';
     }
 
     public static function parseHeaders($headers) {
-	$return = array();
-	$headers = explode("\r\n", $headers);
-	$response = explode(" ", $headers[0]);
-	$return['STATUS'] = $response[1];
-	unset($headers[0]);
-	foreach ($headers as $header) {
-	    $header = explode(": ", $header, 2);
-	    if (!isset($return[$header[0]])) {
-		if (isset($header[1])) {
-		    $return[$header[0]] = $header[1];
-		}
-	    } else {
-		if (!is_array($return[$header[0]])) {
-		    $return[$header[0]] = array($return[$header[0]]);
-		}
-		$return[$header[0]][] = $header[1];
-	    }
-	}
-	return $return;
+        $return = array();
+        $headers = explode("\r\n", $headers);
+        $response = explode(" ", $headers[0]);
+        $return['STATUS'] = $response[1];
+        unset($headers[0]);
+        foreach ($headers as $header) {
+            $header = explode(": ", $header, 2);
+            if (!isset($return[$header[0]])) {
+                if (isset($header[1])) {
+                    $return[$header[0]] = $header[1];
+                }
+            } else {
+                if (!is_array($return[$header[0]])) {
+                    $return[$header[0]] = array($return[$header[0]]);
+                }
+                $return[$header[0]][] = $header[1];
+            }
+        }
+        return $return;
     }
 
 }
