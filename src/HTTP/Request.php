@@ -144,16 +144,18 @@ class HTTP_Request {
                         if (isset($header['Location']) and $this->redirections < $this->max_redirections) {
 
                             $location = parse_url($header['Location']);
+                            $custom_port = ($url['port'] == 80 or $url['port'] == 443) ? '' : ':'.$url['port'];
+                            
                             if (!isset($location['host'])) {
 
                                 if (substr($header['Location'], 0, 1) == '/') {
                                     # It's an absolute URL.
-                                    $header['Location'] = $url['scheme'] . '://' . $url['host'] . $header['Location'];
+                                    $header['Location'] = $url['scheme'] . '://' . $url['host'].$custom_port . $header['Location'];
                                 } else {
                                     # It's a relative URL, let's take care of it.
                                     $path = explode('/', $url['path']);
                                     array_pop($path);
-                                    $header['Location'] = $url['scheme'] . '://' . $url['host'] . implode('/', $path) . '/' . $header['Location'];
+                                    $header['Location'] = $url['scheme'] . '://' . $url['host'].$custom_port . implode('/', $path) . '/' . $header['Location'];
                                 }
                             }
                             $this->redirections++;
