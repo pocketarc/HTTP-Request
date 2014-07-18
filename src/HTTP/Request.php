@@ -65,7 +65,7 @@ class HTTP_Request {
         if (!$fp) {
             throw new Exception("Failed to connect to {$url['host']}.");
         } else {
-            $url['query'] = empty($url['query']) ? '' : '?' . $url['query'];
+            $url['query'] = '?'. (empty($url['query']) ? http_build_query($data) : $url['query']);
             $out = "$mode {$url['path']}{$url['query']} HTTP/1.0\r\n";
             $out .= "Host: {$url['host']}\r\n";
             $out .= "User-Agent: {$this->user_agent}\r\n";
