@@ -2,25 +2,25 @@
 
 /**
  * HTTP Request
- * 
+ *
  * A web crawler which behaves just like a regular web browser, interpreting
  * location redirects and storing cookies automatically.
  *
  * LICENSE
  *
  * Copyright (c) 2011 Bruno De Barros <bruno@terraduo.com>
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * @author     Bruno De Barros <bruno@terraduo.com>
  * @copyright  Copyright (c) 2011 Bruno De Barros <bruno@terraduo.com>
  * @license    http://opensource.org/licenses/mit-license     MIT License
  * @version 1.0.0
- * 
+ *
  */
 class HTTP_Request {
 
@@ -33,11 +33,11 @@ class HTTP_Request {
     public $header = array();
 
     function __construct() {
-        
+
     }
 
     function request($url, $mode = 'GET', $data = array(), $save_to_file = false) {
-        if (!stristr($url, 'http://') and !stristr($url, 'https://')) {
+        if (!stristr($url, 'http://') and ! stristr($url, 'https://')) {
             $url = 'http://' . $url;
         }
         $original = $url;
@@ -65,7 +65,7 @@ class HTTP_Request {
         if (!$fp) {
             throw new Exception("Failed to connect to {$url['host']}.");
         } else {
-            $url['query'] = '?'. (empty($url['query']) ? http_build_query($data) : $url['query']);
+            $url['query'] = '?' . ((empty($url['query']) and $mode == 'GET') ? http_build_query($data) : $url['query']);
             $out = "$mode {$url['path']}{$url['query']} HTTP/1.0\r\n";
             $out .= "Host: {$url['host']}\r\n";
             $out .= "User-Agent: {$this->user_agent}\r\n";
@@ -120,7 +120,7 @@ class HTTP_Request {
 
                 while (!feof($fp)) {
                     $line = fgets($fp);
-                    if ($line == "\r\n" and !$header_passed) {
+                    if ($line == "\r\n" and ! $header_passed) {
                         $header_passed = true;
 
                         $header = self::parseHeaders($header);
@@ -144,18 +144,18 @@ class HTTP_Request {
                         if (isset($header['Location']) and $this->redirections < $this->max_redirections) {
 
                             $location = parse_url($header['Location']);
-                            $custom_port = ($url['port'] == 80 or $url['port'] == 443) ? '' : ':'.$url['port'];
-                            
+                            $custom_port = ($url['port'] == 80 or $url['port'] == 443) ? '' : ':' . $url['port'];
+
                             if (!isset($location['host'])) {
 
                                 if (substr($header['Location'], 0, 1) == '/') {
                                     # It's an absolute URL.
-                                    $header['Location'] = $url['scheme'] . '://' . $url['host'].$custom_port . $header['Location'];
+                                    $header['Location'] = $url['scheme'] . '://' . $url['host'] . $custom_port . $header['Location'];
                                 } else {
                                     # It's a relative URL, let's take care of it.
                                     $path = explode('/', $url['path']);
                                     array_pop($path);
-                                    $header['Location'] = $url['scheme'] . '://' . $url['host'].$custom_port . implode('/', $path) . '/' . $header['Location'];
+                                    $header['Location'] = $url['scheme'] . '://' . $url['host'] . $custom_port . implode('/', $path) . '/' . $header['Location'];
                                 }
                             }
                             $this->redirections++;
@@ -189,27 +189,19 @@ class HTTP_Request {
         $i = 0;
 
         if ($multipart) {
-            $return .= '--' . $boundary;
-        }
+            $return = '--' . $boundary;
 
-        foreach ($data as $key => $value) {
-            if (!$multipart) {
-                if ($i == 0) {
-                    $return .= urlencode($key) . "=" . urlencode($value);
-                    $i = 1;
-                } else {
-                    $return .= "&" . urlencode($key) . "=" . urlencode($value);
-                }
-            } else {
+            foreach ($data as $key => $value) {
                 $return .= "\r\n" . 'Content-Disposition: form-data; name="' . $key . '"' . "\r\n" . "\r\n";
                 $return .= $value . "\r\n";
                 $return .= '--' . $boundary;
             }
+
+            $return .= '--';
+        } else {
+            $return = http_build_query($data);
         }
 
-        if ($multipart) {
-            $return .= '--';
-        }
         return $return;
     }
 
