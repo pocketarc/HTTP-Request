@@ -33,7 +33,7 @@ class HTTP_Request {
     public $header = array();
 
     function __construct() {
-
+        
     }
 
     function request($url, $mode = 'GET', $data = array(), $save_to_file = false) {
@@ -44,7 +44,7 @@ class HTTP_Request {
         $url = parse_url($url);
         if (!isset($url['host'])) {
             print_r($url);
-            throw new Exception("Failed to parse the given URL correctly.");
+            throw new HTTP_Request_Exception("Failed to parse the given URL correctly.");
         }
         if (!isset($url['path'])) {
             $url['path'] = '/';
@@ -60,10 +60,10 @@ class HTTP_Request {
         $errno = 0;
         $errstr = '';
         $port = $url['port'];
-        $sslhost = (($url['scheme'] == 'https') ? 'ssl://' : '') . $url['host'];
+        $sslhost = (($url['scheme'] == 'https') ? 'tls://' : '') . $url['host'];
         $fp = @fsockopen($sslhost, $port, $errno, $errstr, 30);
         if (!$fp) {
-            throw new Exception("Failed to connect to {$url['host']}.");
+            throw new HTTP_Request_Exception("Failed to connect to {$url['host']}.");
         } else {
             $url['query'] = '?' . ((empty($url['query']) and $mode == 'GET') ? http_build_query($data) : $url['query']);
             $out = "$mode {$url['path']}{$url['query']} HTTP/1.0\r\n";
@@ -159,7 +159,7 @@ class HTTP_Request {
                                 }
                             }
                             $this->redirections++;
-                            $content = $this->request($header['Location'], 'GET', $mode == 'POST' ? array() : $mode, $save_to_file);
+                            $content = $this->request($header['Location'], $mode, $data, $save_to_file);
                             break;
                         }
                     }
@@ -179,7 +179,7 @@ class HTTP_Request {
                 }
                 return trim($content);
             } else {
-                throw new Exception("Failed to send request headers to $url.");
+                throw new HTTP_Request_Exception("Failed to send request headers to $url.");
             }
         }
     }
@@ -236,4 +236,8 @@ class HTTP_Request {
         return $return;
     }
 
+}
+
+class HTTP_Request_Exception extends Exception {
+    
 }
