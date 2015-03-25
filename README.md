@@ -1,3 +1,7 @@
+[![Latest Version](https://img.shields.io/github/release/brunodebarros/http-request.svg?style=flat-square)](https://github.com/brunodebarros/http-request/releases)
+[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
+[![Total Downloads](https://img.shields.io/packagist/dt/brunodebarros/http-request.svg?style=flat-square)](https://packagist.org/packages/brunodebarros/http-request)
+
 HTTP Request 1.0
 ================
 
