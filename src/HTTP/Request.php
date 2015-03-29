@@ -19,7 +19,7 @@
  * @author     Bruno De Barros <bruno@terraduo.com>
  * @copyright  Copyright (c) 2015 Bruno De Barros <bruno@terraduo.com>
  * @license    http://opensource.org/licenses/mit-license     MIT License
- * @version 1.0.0
+ * @version 1.0.1
  *
  */
 class HTTP_Request {
@@ -119,9 +119,15 @@ class HTTP_Request {
                 }
 
                 while (!feof($fp)) {
-                    $line = fgets($fp);
+                    if ($header_passed) {
+                        $line = fread($fp, 1024);
+                    } else {
+                        $line = fgets($fp);
+                    }
+
                     if ($line == "\r\n" and ! $header_passed) {
                         $header_passed = true;
+                        $line = "";
 
                         $header = self::parseHeaders($header);
 
@@ -177,7 +183,7 @@ class HTTP_Request {
                 if ($save_to_file) {
                     fclose($fh);
                 }
-                return trim($content);
+                return $content;
             } else {
                 throw new HTTP_Request_Exception("Failed to send request headers to $url.");
             }
