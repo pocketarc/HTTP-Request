@@ -19,29 +19,35 @@
  * @author     Bruno De Barros <bruno@terraduo.com>
  * @copyright  Copyright (c) 2015 Bruno De Barros <bruno@terraduo.com>
  * @license    http://opensource.org/licenses/mit-license     MIT License
- * @version 1.0.1
+ * @version    1.0.2
  *
  */
 class HTTP_Request {
 
-    public $cookies = array();
-    public $user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/536.26.17 (KHTML, like Gecko) Version/6.0.2 Safari/536.26.17';
-    public $last_url = '';
-    public $multipart = false;
-    public $redirections = 0;
+    public $cookies          = array();
+    public $user_agent       = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/536.26.17 (KHTML, like Gecko) Version/6.0.2 Safari/536.26.17';
+    public $last_url         = '';
+    public $multipart        = false;
+    public $redirections     = 0;
     public $max_redirections = 10;
-    public $header = array();
+    public $header           = array();
+
+    protected $last_request = null;
 
     function __construct() {
-        
+
+    }
+
+    function getLastRequest() {
+        return $this->last_request;
     }
 
     function request($url, $mode = 'GET', $data = array(), $save_to_file = false) {
-        if (!stristr($url, 'http://') and ! stristr($url, 'https://')) {
+        if (!stristr($url, 'http://') and !stristr($url, 'https://')) {
             $url = 'http://' . $url;
         }
         $original = $url;
-        $url = parse_url($url);
+        $url      = parse_url($url);
         if (!isset($url['host'])) {
             print_r($url);
             throw new HTTP_Request_Exception("Failed to parse the given URL correctly.");
@@ -57,16 +63,16 @@ class HTTP_Request {
             $url['port'] = ($url['scheme'] == 'https') ? 443 : 80;
         }
 
-        $errno = 0;
-        $errstr = '';
-        $port = $url['port'];
+        $errno   = 0;
+        $errstr  = '';
+        $port    = $url['port'];
         $sslhost = (($url['scheme'] == 'https') ? 'tls://' : '') . $url['host'];
-        $fp = @fsockopen($sslhost, $port, $errno, $errstr, 30);
+        $fp      = @fsockopen($sslhost, $port, $errno, $errstr, 30);
         if (!$fp) {
             throw new HTTP_Request_Exception("Failed to connect to {$url['host']}.");
         } else {
             $url['query'] = '?' . ((empty($url['query']) and $mode == 'GET') ? http_build_query($data) : $url['query']);
-            $out = "$mode {$url['path']}{$url['query']} HTTP/1.0\r\n";
+            $out          = "$mode {$url['path']}{$url['query']} HTTP/1.0\r\n";
             $out .= "Host: {$url['host']}\r\n";
             $out .= "User-Agent: {$this->user_agent}\r\n";
             if (count($this->cookies) > 0) {
@@ -102,9 +108,11 @@ class HTTP_Request {
                 $out .= "\r\n";
             }
 
-            $content = '';
-            $header = '';
+            $content       = '';
+            $header        = '';
             $header_passed = false;
+
+            $this->last_request = $out;
 
             if (fwrite($fp, $out)) {
 
@@ -125,22 +133,22 @@ class HTTP_Request {
                         $line = fgets($fp);
                     }
 
-                    if ($line == "\r\n" and ! $header_passed) {
+                    if ($line == "\r\n" and !$header_passed) {
                         $header_passed = true;
-                        $line = "";
+                        $line          = "";
 
                         $header = self::parseHeaders($header);
 
                         if (isset($header['Set-Cookie'])) {
                             if (is_array($header['Set-Cookie'])) {
                                 foreach ($header['Set-Cookie'] as $cookie) {
-                                    $cookie = explode(';', $cookie);
-                                    $cookie = explode('=', $cookie[0], 2);
+                                    $cookie                    = explode(';', $cookie);
+                                    $cookie                    = explode('=', $cookie[0], 2);
                                     $this->cookies[$cookie[0]] = $cookie[1];
                                 }
                             } else {
-                                $header['Set-Cookie'] = explode(';', $header['Set-Cookie']);
-                                $header['Set-Cookie'] = explode('=', $header['Set-Cookie'][0], 2);
+                                $header['Set-Cookie']                    = explode(';', $header['Set-Cookie']);
+                                $header['Set-Cookie']                    = explode('=', $header['Set-Cookie'][0], 2);
                                 $this->cookies[$header['Set-Cookie'][0]] = $header['Set-Cookie'][1];
                             }
                         }
@@ -149,7 +157,7 @@ class HTTP_Request {
 
                         if (isset($header['Location']) and $this->redirections < $this->max_redirections) {
 
-                            $location = parse_url($header['Location']);
+                            $location    = parse_url($header['Location']);
                             $custom_port = ($url['port'] == 80 or $url['port'] == 443) ? '' : ':' . $url['port'];
 
                             if (!isset($location['host'])) {
@@ -183,6 +191,7 @@ class HTTP_Request {
                 if ($save_to_file) {
                     fclose($fh);
                 }
+
                 return $content;
             } else {
                 throw new HTTP_Request_Exception("Failed to send request headers to $url.");
@@ -192,7 +201,7 @@ class HTTP_Request {
 
     public static function urlencodeArray($data, $multipart = false, $boundary = '') {
         $return = "";
-        $i = 0;
+        $i      = 0;
 
         if ($multipart) {
             $return = '--' . $boundary;
@@ -215,15 +224,17 @@ class HTTP_Request {
         $r = explode($start, $content, 2);
         if (isset($r[1])) {
             $r = explode($end, $r[1], 2);
+
             return $r[0];
         }
+
         return '';
     }
 
     public static function parseHeaders($headers) {
-        $return = array();
-        $headers = explode("\r\n", $headers);
-        $response = explode(" ", $headers[0]);
+        $return           = array();
+        $headers          = explode("\r\n", $headers);
+        $response         = explode(" ", $headers[0]);
         $return['STATUS'] = $response[1];
         unset($headers[0]);
         foreach ($headers as $header) {
@@ -239,11 +250,12 @@ class HTTP_Request {
                 $return[$header[0]][] = $header[1];
             }
         }
+
         return $return;
     }
 
 }
 
 class HTTP_Request_Exception extends Exception {
-    
+
 }
